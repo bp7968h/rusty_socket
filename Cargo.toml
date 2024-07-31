@@ -1,0 +1,16 @@
+[workspace]
+# Workspace members on edition 2021
+resolver = "2"
+
+# List of workspace members
+members = [
+    "example/client",
+    "example/server",
+    "rusty_socket_server",
+    "rusty_socket_client",
+    "rusty_socket_core",
+]
+
+[workspace.dependencies]
+base64 = { git = "https://github.com/bp7968h/base64" }
+cryptography = { git = "https://github.com/bp7968h/cryptography" }
