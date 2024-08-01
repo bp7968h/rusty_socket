@@ -3,12 +3,25 @@
 version = 3
 
 [[package]]
+name = "base64"
+version = "0.1.0"
+source = "git+https://github.com/bp7968h/base64#2a91a423846afc10ba1753d4ebf484152ebc7909"
+
+[[package]]
 name = "client"
 version = "0.1.0"
 
 [[package]]
+name = "cryptography"
+version = "0.1.0"
+source = "git+https://github.com/bp7968h/cryptography#9129e5c1d42824f23dcc36a48d020b5f30e82599"
+
+[[package]]
 name = "rusty_socket_client"
 version = "0.1.0"
+dependencies = [
+ "base64",
+]
 
 [[package]]
 name = "rusty_socket_core"
@@ -17,6 +30,10 @@ version = "0.1.0"
 [[package]]
 name = "rusty_socket_server"
 version = "0.1.0"
+dependencies = [
+ "base64",
+ "cryptography",
+]
 
 [[package]]
 name = "server"
