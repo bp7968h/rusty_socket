@@ -46,6 +46,18 @@ impl DataFrame {
         
         OpCode::from(opcode_bits)
     }
+
+    fn is_control_frame(&self) -> bool {
+        let op_code = u8::from(self.get_opcode());
+        
+        (op_code >> 3) & 1 != 0
+    }
+
+    fn get_payload_length(&self) -> u8 {
+        let payload_length_bits : u8 = self.mask_payload_length & 0b01111111;
+        
+        payload_length_bits
+    }
 }
 
 #[cfg(test)]
@@ -100,4 +112,29 @@ mod tests {
         assert_eq!(OpCode::Pong, frame.get_opcode());
     }
 
+    #[test]
+    fn test_control_frame(){
+        let frame = DataFrame {
+            fin_rscv_opcode: 0b00101000,
+            mask_payload_length: 0b10010111,
+            extended_payload_length: None,
+            masking_key: None,
+            payload: Vec::new()
+        };
+
+        assert_eq!(true, frame.is_control_frame());
+    }
+
+    #[test]
+    fn test_payload_length(){
+        let frame = DataFrame {
+            fin_rscv_opcode: 0b00101000,
+            mask_payload_length: 0b10010111,
+            extended_payload_length: None,
+            masking_key: None,
+            payload: Vec::new()
+        };
+
+        assert_eq!(23, frame.get_payload_length());
+    }
 }
