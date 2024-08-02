@@ -1,3 +1,5 @@
+use crate::OpCode;
+
 enum ExtendedPayLoadLength {
     Medium(u16),
     Large(u64)
@@ -26,6 +28,24 @@ impl DataFrame {
     fn unset_final_fragment(&mut self){
         self.fin_rscv_opcode = self.fin_rscv_opcode & 0b01111111;
     }
+
+    fn is_masked(&self) -> bool {
+        ((self.mask_payload_length >> 7) & 1) != 0
+    }
+    
+    fn set_masked(&mut self) {
+        self.mask_payload_length = self.mask_payload_length | 0b10000000;
+    }
+    
+    fn unset_masked(&mut self) {
+        self.mask_payload_length = self.mask_payload_length & 0b01111111;
+    }
+
+    fn get_opcode(&self) -> OpCode {
+        let opcode_bits: u8 = self.fin_rscv_opcode & 0b00001111;
+        
+        OpCode::from(opcode_bits)
+    }
 }
 
 #[cfg(test)]
@@ -33,7 +53,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_fin_modification(){
+    fn test_fin_bit_modification(){
         let mut frame = DataFrame {
             fin_rscv_opcode: 0b00101011,
             mask_payload_length: 141,
@@ -48,4 +68,36 @@ mod tests {
         frame.unset_final_fragment();
         assert_eq!(false, frame.is_final_fragment());
     }
+
+    #[test]
+    fn test_mask_bit_modification(){
+        let mut frame = DataFrame {
+            fin_rscv_opcode: 0b00101011,
+            mask_payload_length: 0b10010111,
+            extended_payload_length: None,
+            masking_key: None,
+            payload: Vec::new()
+        };
+
+        frame.unset_masked();
+        assert_eq!(false, frame.is_masked());
+        
+        frame.set_masked();
+        assert_eq!(true, frame.is_masked());
+    }
+
+    #[test]
+    fn test_opcode_parser(){
+        let frame = DataFrame {
+            fin_rscv_opcode: 0b00101010,
+            mask_payload_length: 0b10010111,
+            extended_payload_length: None,
+            masking_key: None,
+            payload: Vec::new()
+        };
+
+        assert_eq!(OpCode::from(10), frame.get_opcode());
+        assert_eq!(OpCode::Pong, frame.get_opcode());
+    }
+
 }
