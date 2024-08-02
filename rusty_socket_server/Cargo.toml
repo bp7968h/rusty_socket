@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 base64 = { workspace = true }
 cryptography = { workspace = true }
+rusty_socket_core = { path = "../rusty_socket_core" }
