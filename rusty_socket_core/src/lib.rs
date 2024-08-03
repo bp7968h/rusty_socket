@@ -4,3 +4,4 @@ pub mod handshake;
 
 
 pub use opcode::OpCode;
+pub use handshake::{HandShake, RequestLine, ResponseLine, ConnectionStatus};

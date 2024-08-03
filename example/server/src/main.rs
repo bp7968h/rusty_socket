@@ -1,3 +1,7 @@
+use rusty_socket_server::SocketServer;
+
 fn main() {
-    println!("Hello, world!");
+    let server = SocketServer::new();
+
+    server.start();
 }

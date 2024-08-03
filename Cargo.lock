@@ -21,6 +21,7 @@ name = "rusty_socket_client"
 version = "0.1.0"
 dependencies = [
  "base64",
+ "rusty_socket_core",
 ]
 
 [[package]]
@@ -33,8 +34,12 @@ version = "0.1.0"
 dependencies = [
  "base64",
  "cryptography",
+ "rusty_socket_core",
 ]
 
 [[package]]
 name = "server"
 version = "0.1.0"
+dependencies = [
+ "rusty_socket_server",
+]
