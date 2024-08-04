@@ -1,5 +1,5 @@
 use std::net::{SocketAddrV4, TcpListener, TcpStream};
-use std::io::{Read};
+use std::io::{Read, Write};
 
 use rusty_socket_core::HandShake;
 use crate::Connections;
@@ -43,7 +43,16 @@ impl SocketServer {
 
         let handshake = HandShake::build(&client_request);
 
-        if let Some(request) 
+
+        match handshake.request {
+            Some(request) => {
+                todo!();
+            },
+            None => {
+                stream.write_all(handshake.response.to_string().as_bytes()).expect("Failed to write response");
+                stream.flush().expect("Failed to flush stream");
+            }
+        }
         // parse the request
         // check if it's a normal request or a websocket request
         // if normal request just response error status 

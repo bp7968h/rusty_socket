@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt;
 
 use cryptography::SHA1;
 use base64::encode;
@@ -44,5 +45,18 @@ impl ResponseLine {
         let sha1_hash = hasher.hash(&combined_key);
         
         encode(&sha1_hash)
+    }
+}
+
+
+impl fmt::Display for ResponseLine {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "HTTP/1.1 {} {}\r\n", self.status_code, self.reason_phrase)?;
+        if let Some(headers) = &self.headers {
+            for (key, value) in headers {
+                write!(f, "{}: {}\r\n", key, value)?;
+            }
+        }
+        write!(f, "\r\n")
     }
 }

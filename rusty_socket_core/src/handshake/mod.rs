@@ -7,9 +7,9 @@ pub use response_line::ResponseLine;
 pub use connection_status::ConnectionStatus;
 
 pub struct HandShake {
-    request: Option<RequestLine>,
-    response: ResponseLine,
-    state: ConnectionStatus
+    pub request: Option<RequestLine>,
+    pub response: ResponseLine,
+    pub state: ConnectionStatus
 }
 
 impl HandShake{
@@ -23,7 +23,7 @@ impl HandShake{
                     state: ConnectionStatus::Connecting
                 }
             } else {
-                let response = ResponseLine::err_build(400, "Bad Request: Missing Sec-WebSocket-Key");
+                let response = ResponseLine::err_build(400, "Bad Request");
                 HandShake {
                     request: None,
                     response,
