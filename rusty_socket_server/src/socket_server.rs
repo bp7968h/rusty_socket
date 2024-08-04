@@ -1,7 +1,9 @@
 use std::net::{SocketAddrV4, TcpListener, TcpStream};
 use std::io::{Read};
 
+use rusty_socket_core::HandShake;
 use crate::Connections;
+
 
 pub struct SocketServer {
     target: SocketAddrV4,
@@ -37,7 +39,15 @@ impl SocketServer {
     fn handle_connection(mut stream: TcpStream) {
         let mut buffer = [0; 512];
         let _ = stream.read(&mut buffer);
+        let client_request = String::from_utf8_lossy(&buffer);
 
+        let handshake = HandShake::build(&client_request);
+
+        if let Some(request) 
+        // parse the request
+        // check if it's a normal request or a websocket request
+        // if normal request just response error status 
+        // else respond with a websocket handshake reponse
         println!("Received: {:?}", buffer);
     }
 }
