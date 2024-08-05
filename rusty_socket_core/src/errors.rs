@@ -1,26 +1,32 @@
 use std::fmt;
 
-pub type RS_Result<T> = Result<T, RS_Error>;
+pub type RsResult<T> = Result<T, RsError>;
 
 #[derive(Debug)]
-pub enum RS_Error {
+pub enum RsError {
     ProtocolError,
     MethodNotAllowed,
     BadRequest,
     UnprocessableContent,
     UpgradeRequired,
+    IncompleteData,
+    FragmentationNotSupported,
+    InvalidOpCode,
 }
 
-impl fmt::Display for RS_Error {
+impl fmt::Display for RsError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            RS_Error::ProtocolError => write!(f, "Protocol Error"),
-            RS_Error::MethodNotAllowed => write!(f, "Method Not Allowed"),
-            RS_Error::BadRequest => write!(f, "Bad Request"),
-            RS_Error::UnprocessableContent => write!(f, "Unprocessable Content"),
-            RS_Error::UpgradeRequired => write!(f, "Upgrade Required")
+            RsError::ProtocolError => write!(f, "Protocol Error"),
+            RsError::MethodNotAllowed => write!(f, "Method Not Allowed"),
+            RsError::BadRequest => write!(f, "Bad Request"),
+            RsError::UnprocessableContent => write!(f, "Unprocessable Content"),
+            RsError::UpgradeRequired => write!(f, "Upgrade Required"),
+            RsError::IncompleteData => write!(f, "Insufficient Data"),
+            RsError::FragmentationNotSupported => write!(f, "Fragmentation Not yet Supported"),
+            RsError::InvalidOpCode => write!(f, "Invalid Opcode"),
         }
     }
 }
 
-impl std::error::Error for RS_Error {}
+impl std::error::Error for RsError {}
