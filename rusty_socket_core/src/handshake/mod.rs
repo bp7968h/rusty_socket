@@ -31,7 +31,7 @@ impl HandShake{
                 }
             }
         } else {
-            let response = ResponseLine::err_build(404, "Method Not Allowed");
+            let response = ResponseLine::err_build(400, "Bad Request");
             HandShake {
                 request : None,
                 response: response,

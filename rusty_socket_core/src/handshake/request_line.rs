@@ -42,7 +42,10 @@ impl RequestLine {
                 resource,
                 headers,
             }),
-            Err(e) => None
+            Err(e) => {
+                println!("Error: {}", e);
+                None
+            }
         }
     }
 
