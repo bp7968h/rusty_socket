@@ -1,22 +1,108 @@
-use crate::OpCode;
+use std::convert::TryFrom;
 
+use crate::{OpCode, RsError};
+
+#[derive(Debug)]
 enum ExtendedPayLoadLength {
     Medium(u16),
     Large(u64)
 }
 
+impl fmt::Display for ExtendedPayLoadLength {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            ExtendedPayLoadLength::Medium(data) => write!(f, "2byte-{}", data),
+            ExtendedPayLoadLength::Large(data) => write!(f, "8byte-{}", data),
+        }
+    }
+}
+
+
+#[derive(Debug)]
 struct DataFrame {
     fin_rscv_opcode: u8, // 1 + 1 + 1 + 1 + 4 bits
     mask_payload_length: u8, // 1 + 7 bits
     // payload length in bytes if 0-125, this is the payload length,
-    // if 26, the following 2 bytes interpreted as 16-bit unsigned integer is payload length,
+    // if 126, the following 2 bytes interpreted as 16-bit unsigned integer is payload length,
     // if 127 the following 8 bytes interpreted as 62-bit unsigne integer is payload length
     extended_payload_length: Option<ExtendedPayLoadLength>, // 16 or 64 bits or None
     masking_key: Option<[u8; 4]>, // 0 or 32-bit, present if mask bit is 1 else absent
     payload: Vec<u8> // arbitary length
 }
 
+impl fmt::Display for DataFrame {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "0x{:02x} 0x{:02x} ", self.fin_rscv_opcode, self.mask_payload_length)?;
+        if let Some(extended_payload_length) = &self.extended_payload_length {
+            write!(f, "{} ", extended_payload_length)?;
+        }else {
+            write!(f, "None ")?;
+        }
+        
+        if let Some(masking_key) = self.masking_key {
+            for i in masking_key.iter() {
+            write!(f, "0x{:02x} ", i)?;   
+        }
+        } else {
+            write!(f, "None ")?;
+        }
+        
+        for i in self.payload.iter() {
+            write!(f, "0x{:02x} ", i)?;   
+        }
+        
+        Ok(())
+    }
+}
+
 impl DataFrame {
+    fn from_data<T: AsRef<[u8]>>(data: T, opcode: OpCode, mask: bool) -> Option<Self> {
+        let data_bytes : &[u8] = data.as_ref();
+        let data_length = data_bytes.len();
+        
+        if !opcode.isValid() {
+            return None;
+        }
+        
+        let fin_rscv_opcode : u8 = 0b10000000 | u8::from(opcode);
+        let mut masking_key: Option<[u8; 4]> = None;
+        let mut mask_payload_length: u8 = if mask {
+            let mut random_bytes = [0u8; 4];
+            rand::thread_rng().fill_bytes(&mut random_bytes);
+            masking_key = Some(random_bytes);
+            0b10000000
+        }else {
+            0b0000000
+        };
+        
+        let mut extended_payload_length : Option<ExtendedPayLoadLength> = None;
+        match data_length {
+            0..=125 => {
+                mask_payload_length = mask_payload_length | data_length as u8;
+            },
+            126..=65535 => {
+                mask_payload_length = mask_payload_length | 126u8;
+                extended_payload_length = Some(ExtendedPayLoadLength::Medium(data_length as u16));
+            },
+            _ => {
+                mask_payload_length = mask_payload_length | 127u8;
+                extended_payload_length = Some(ExtendedPayLoadLength::Large(data_length as u64));
+            }
+        }
+        
+        let mut frame = DataFrame {
+            fin_rscv_opcode,
+            mask_payload_length,
+            extended_payload_length,
+            masking_key,
+            payload: data_bytes.to_vec(),
+        };
+        
+        frame.apply_mask();
+        
+        Some(frame)
+    }
+    
     fn is_final_fragment(&self) -> bool {
         ((self.fin_rscv_opcode >> 7) & 1) != 0
     }
@@ -57,6 +143,98 @@ impl DataFrame {
         let payload_length_bits : u8 = self.mask_payload_length & 0b01111111;
         
         payload_length_bits
+    }
+
+    fn apply_mask(&mut self) {
+        if let Some(masking_key) = self.masking_key {
+            for (i, byte) in self.payload.iter_mut().enumerate() {
+                *byte ^= masking_key[i % 4];
+            }
+        }
+    }
+}
+
+impl TryFrom<&[u8]> for DataFrame {
+    type Error = RsError;
+
+    fn try_from(data: &[u8]) -> Result<Self, Self::Error> {
+        if data.len() < 2 {
+            return Err(RsError::IncompleteData);
+        }
+
+        let fin_rscv_opcode = data[0];
+        let mask_payload_length = data[1];
+
+        if (fin_rscv_opcode >> 7) & 1 != 1 {
+            return Err(RsError::FragmentationNotSupported);
+        }
+        if (fin_rscv_opcode & 0b00001111) > 0xA {
+            return Err(RsError::InvalidOpCode);
+        }
+        
+        let payload_length_indicator : u8 = data[1] & 0b01111111;
+        let extended_payload_length = match payload_length_indicator {
+            126 => {
+                if data.len() < 4 {
+                    return Err(RsError::IncompleteData);
+                }
+                let mut bytes = [0u8; 2];
+                bytes.copy_from_slice(&data[2..=3]);
+                Some(ExtendedPayLoadLength::Medium(u16::from_be_bytes(bytes)))
+            },
+            127 => {
+                if data.len() < 10 {
+                    return Err(RsError::IncompleteData);
+                }
+                let mut bytes = [0u8; 8];
+                bytes.copy_from_slice(&data[2..10]);
+                Some(ExtendedPayLoadLength::Large(u64::from_be_bytes(bytes)))
+            },
+            _ => None
+        };
+
+        let mut payload_start = match extended_payload_length {
+            Some(ExtendedPayLoadLength::Medium(_)) => 4,
+            Some(ExtendedPayLoadLength::Large(_)) => 10,
+            None => 2,
+        };
+
+        let is_masked : bool = (mask_payload_length & 0b10000000) != 0;
+        let masking_key = if is_masked {
+            if data.len() < payload_start + 4 {
+                return Err(RsError::IncompleteData);
+            }
+            let mut key = [0u8; 4];
+            key.copy_from_slice(&data[payload_start..payload_start + 4]);
+            payload_start += 4;
+            Some(key)
+        } else {
+            None
+        };
+
+        let payload_length = match extended_payload_length {
+            Some(ExtendedPayLoadLength::Medium(len)) => len as usize,
+            Some(ExtendedPayLoadLength::Large(len)) => len as usize,
+            None => payload_length_indicator as usize,
+        };
+
+        if data.len() < payload_start + payload_length {
+            return Err(RsError::IncompleteData);
+        }
+
+        let mut payload = data[payload_start..payload_start + payload_length].to_vec();
+
+        let mut frame = DataFrame {
+            fin_rscv_opcode,
+            mask_payload_length,
+            extended_payload_length,
+            masking_key,
+            payload,
+        };
+
+        frame.apply_mask();
+
+        Ok(frame)
     }
 }
 
@@ -136,5 +314,45 @@ mod tests {
         };
 
         assert_eq!(23, frame.get_payload_length());
+    }
+
+    #[test]
+    fn test_valid_frame() {
+        // FIN + Text, Not Mask + 1-byte payload length, payload: 1
+        let raw_data: &[u8] = &[0b10000001, 0b00000001, 1]; 
+
+        let frame: DataFrame = raw_data.try_into().expect("Failed to deserialize");
+    
+        assert_eq!(frame.fin_rscv_opcode, 0b10000001);
+        assert_eq!(frame.mask_payload_length, 0b00000001);
+        assert_eq!(frame.payload, vec![1]);
+    }
+
+    #[test]
+    fn test_valid_frame_string() {
+        let raw_data : &[u8] = &[0x81, 0x05, 0x48, 0x65, 0x6c, 0x6c, 0x6f];
+        
+        let frame: DataFrame = raw_data.try_into().expect("Failed to deserialize");
+
+        assert_eq!(String::from_utf8(frame.payload).unwrap(), "Hello".to_string());
+    }
+
+    #[test]
+    fn test_valid_frame_string_masked() {
+        let raw_data : &[u8] = &[0x81, 0x85, 0x37, 0xfa, 0x21, 0x3d, 0x7f, 0x9f, 0x4d, 0x51, 0x58];
+        
+        let frame: DataFrame = raw_data.try_into().expect("Failed to deserialize");
+        
+        assert_eq!(String::from_utf8(frame.payload).unwrap(), "Hello".to_string());
+    }
+
+    #[test]
+    fn test_invalid_frame_insufficient_data() {
+        let raw_data: &[u8] = &[0b10000001]; // Only 1 byte
+
+        let result: Result<DataFrame, RsError> = raw_data.try_into();
+
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err().to_string(), "Insufficient Data");
     }
 }
