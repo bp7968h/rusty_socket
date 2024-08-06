@@ -8,6 +8,16 @@ enum ExtendedPayLoadLength {
     Large(u64)
 }
 
+impl fmt::Display for ExtendedPayLoadLength {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            ExtendedPayLoadLength::Medium(data) => write!(f, "2byte-{}", data),
+            ExtendedPayLoadLength::Large(data) => write!(f, "8byte-{}", data),
+        }
+    }
+}
+
+
 #[derive(Debug)]
 struct DataFrame {
     fin_rscv_opcode: u8, // 1 + 1 + 1 + 1 + 4 bits
