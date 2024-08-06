@@ -9,6 +9,15 @@ pub enum OpCode{
     Unknown,
 }
 
+impl OpCode {
+    fn isValid(&self) -> bool {
+        match self {
+            OpCode::Unknown => false,
+            _ => true,
+        }
+    }
+}
+
 impl From<u8> for OpCode {
     fn from(value: u8) -> Self {
         match value {
