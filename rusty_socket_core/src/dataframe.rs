@@ -56,6 +56,53 @@ impl fmt::Display for DataFrame {
 }
 
 impl DataFrame {
+    fn from_data<T: AsRef<[u8]>>(data: T, opcode: OpCode, mask: bool) -> Option<Self> {
+        let data_bytes : &[u8] = data.as_ref();
+        let data_length = data_bytes.len();
+        
+        if !opcode.isValid() {
+            return None;
+        }
+        
+        let fin_rscv_opcode : u8 = 0b10000000 | u8::from(opcode);
+        let mut masking_key: Option<[u8; 4]> = None;
+        let mut mask_payload_length: u8 = if mask {
+            let mut random_bytes = [0u8; 4];
+            rand::thread_rng().fill_bytes(&mut random_bytes);
+            masking_key = Some(random_bytes);
+            0b10000000
+        }else {
+            0b0000000
+        };
+        
+        let mut extended_payload_length : Option<ExtendedPayLoadLength> = None;
+        match data_length {
+            0..=125 => {
+                mask_payload_length = mask_payload_length | data_length as u8;
+            },
+            126..=65535 => {
+                mask_payload_length = mask_payload_length | 126u8;
+                extended_payload_length = Some(ExtendedPayLoadLength::Medium(data_length as u16));
+            },
+            _ => {
+                mask_payload_length = mask_payload_length | 127u8;
+                extended_payload_length = Some(ExtendedPayLoadLength::Large(data_length as u64));
+            }
+        }
+        
+        let mut frame = DataFrame {
+            fin_rscv_opcode,
+            mask_payload_length,
+            extended_payload_length,
+            masking_key,
+            payload: data_bytes.to_vec(),
+        };
+        
+        frame.apply_mask();
+        
+        Some(frame)
+    }
+    
     fn is_final_fragment(&self) -> bool {
         ((self.fin_rscv_opcode >> 7) & 1) != 0
     }
@@ -104,10 +151,6 @@ impl DataFrame {
                 *byte ^= masking_key[i % 4];
             }
         }
-    }
-
-    fn unmask_payload(&mut self) {
-        self.apply_mask()
     }
 }
 
@@ -189,9 +232,7 @@ impl TryFrom<&[u8]> for DataFrame {
             payload,
         };
 
-        if is_masked {
-            frame.apply_mask();
-        }
+        frame.apply_mask();
 
         Ok(frame)
     }
