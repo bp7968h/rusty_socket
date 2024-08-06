@@ -30,6 +30,31 @@ struct DataFrame {
     payload: Vec<u8> // arbitary length
 }
 
+impl fmt::Display for DataFrame {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "0x{:02x} 0x{:02x} ", self.fin_rscv_opcode, self.mask_payload_length)?;
+        if let Some(extended_payload_length) = &self.extended_payload_length {
+            write!(f, "{} ", extended_payload_length)?;
+        }else {
+            write!(f, "None ")?;
+        }
+        
+        if let Some(masking_key) = self.masking_key {
+            for i in masking_key.iter() {
+            write!(f, "0x{:02x} ", i)?;   
+        }
+        } else {
+            write!(f, "None ")?;
+        }
+        
+        for i in self.payload.iter() {
+            write!(f, "0x{:02x} ", i)?;   
+        }
+        
+        Ok(())
+    }
+}
+
 impl DataFrame {
     fn is_final_fragment(&self) -> bool {
         ((self.fin_rscv_opcode >> 7) & 1) != 0
