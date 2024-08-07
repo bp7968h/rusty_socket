@@ -14,3 +14,19 @@ impl fmt::Display for ExtendedPayLoadLength {
         }
     }
 }
+
+impl ExtendedPayLoadLength {
+    pub fn get_size(&self) -> usize {
+        match self {
+            ExtendedPayLoadLength::Medium(_) => 2,
+            ExtendedPayLoadLength::Large(_) => 8,
+        }
+    }
+    
+    pub fn get_value(&self) -> usize {
+        match self {
+            ExtendedPayLoadLength::Medium(data) => *data as usize,
+            ExtendedPayLoadLength::Large(data) => *data as usize,
+        }
+    }
+}
