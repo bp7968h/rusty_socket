@@ -126,6 +126,22 @@ impl DataFrame {
         (op_code >> 3) & 1 != 0
     }
 
+    fn get_size(&self) -> usize {
+        let mut size: usize = 2;
+        
+        if let Some(extended_payload_length) = &self.extended_payload_length {
+            size += extended_payload_length.get_size();
+        }
+        
+        if let Some(masking_key) = self.masking_key {
+            size += 4;
+        }
+        
+        size += self.get_payload_length();
+        
+        size
+    }
+
     fn get_payload_length(&self) -> usize {
         let mut length : usize = 0;
         if let Some(extended_payload_length) = &self.extended_payload_length {
