@@ -245,3 +245,31 @@ impl TryFrom<&[u8]> for DataFrame {
         Ok(frame)
     }
 }
+
+impl From<DataFrame> for Vec<u8> {
+    fn from(data_frame: DataFrame) -> Self {
+        let mut frame_bytes: Vec<u8> = Vec::with_capacity(data_frame.get_size());
+        
+        frame_bytes.push(data_frame.fin_rscv_opcode);
+        frame_bytes.push(data_frame.mask_payload_length);
+        
+        if let Some(extended_payload_length) = data_frame.extended_payload_length {
+            match extended_payload_length {
+                ExtendedPayLoadLength::Medium(data) => {
+                    frame_bytes.extend_from_slice(&data.to_be_bytes());
+                },
+                ExtendedPayLoadLength::Large(data) => {
+                    frame_bytes.extend_from_slice(&data.to_be_bytes());
+                }
+            }
+        }
+        
+        if let Some(masking_key) = data_frame.masking_key {
+            frame_bytes.extend_from_slice(&masking_key);
+        }
+        
+        frame_bytes.extend_from_slice(&data_frame.payload);
+        
+        frame_bytes
+    }
+}
