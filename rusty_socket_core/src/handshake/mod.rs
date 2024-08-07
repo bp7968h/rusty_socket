@@ -13,7 +13,7 @@ pub struct HandShake {
 }
 
 impl HandShake{
-    pub fn build(mut full_request: &str) -> Self {
+    pub fn build(full_request: &str) -> Self {
         if let Some(request) = RequestLine::from_request(full_request.lines()){
             if let Some(web_socket_key) = request.headers.get("sec-websocket-key") {
                 let response = ResponseLine::build(web_socket_key);
