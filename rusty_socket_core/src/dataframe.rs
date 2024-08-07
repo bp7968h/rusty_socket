@@ -126,10 +126,15 @@ impl DataFrame {
         (op_code >> 3) & 1 != 0
     }
 
-    pub fn get_payload_length(&self) -> u8 {
-        let payload_length_bits : u8 = self.mask_payload_length & 0b01111111;
+    fn get_payload_length(&self) -> usize {
+        let mut length : usize = 0;
+        if let Some(extended_payload_length) = &self.extended_payload_length {
+            length = length + extended_payload_length.get_value();
+        }else {
+            length = length + (self.mask_payload_length & 0b01111111) as usize;
+        }
         
-        payload_length_bits
+        length
     }
 
     pub fn apply_mask(&mut self) {
