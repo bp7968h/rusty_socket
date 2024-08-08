@@ -10,7 +10,7 @@ pub enum OpCode{
 }
 
 impl OpCode {
-    pub fn isValid(&self) -> bool {
+    pub fn is_valid(&self) -> bool {
         match self {
             OpCode::Unknown => false,
             _ => true,

@@ -47,7 +47,7 @@ impl DataFrame {
         let data_bytes : &[u8] = data.as_ref();
         let data_length = data_bytes.len();
         
-        if !opcode.isValid() {
+        if !opcode.is_valid() {
             return None;
         }
         
@@ -230,7 +230,7 @@ impl TryFrom<&[u8]> for DataFrame {
             return Err(RsError::IncompleteData);
         }
 
-        let mut payload = data[payload_start..payload_start + payload_length].to_vec();
+        let payload = data[payload_start..payload_start + payload_length].to_vec();
 
         let mut frame = DataFrame {
             fin_rscv_opcode,

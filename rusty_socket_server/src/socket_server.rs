@@ -1,7 +1,7 @@
 use std::net::{SocketAddrV4, TcpListener, TcpStream};
 use std::io::{Read, Write};
 
-use rusty_socket_core::HandShake;
+use rusty_socket_core::{HandShake, DataFrame, OpCode};
 use crate::Connections;
 
 
@@ -26,7 +26,7 @@ impl SocketServer {
         for stream in tcp_listener.incoming() {
             match stream {
                 Ok(stream) => {
-                    Self::handle_connection(stream);
+                    self.handle_connection(stream);
                 },
                 Err(e) => {
                     println!("Error: {}", e);
@@ -36,7 +36,7 @@ impl SocketServer {
         }
     }
 
-    fn handle_connection(mut stream: TcpStream) {
+    fn handle_connection(&self, mut stream: TcpStream) {
         let mut buffer = [0; 512];
         let _ = stream.read(&mut buffer);
         let client_request = String::from_utf8_lossy(&buffer);
@@ -45,18 +45,42 @@ impl SocketServer {
 
 
         match handshake.request {
-            Some(request) => {
-                todo!();
+            Some(_request) => {
+                stream.write_all(handshake.response.to_string().as_bytes()).expect("Failed to write success response");
+                stream.flush().expect("Failed to flush success stream");
+
+                self.handle_frames(stream);
             },
             None => {
                 stream.write_all(handshake.response.to_string().as_bytes()).expect("Failed to write response");
                 stream.flush().expect("Failed to flush stream");
             }
         }
-        // parse the request
-        // check if it's a normal request or a websocket request
-        // if normal request just response error status 
-        // else respond with a websocket handshake reponse
-        println!("Received: {:?}", buffer);
+    }
+
+    fn handle_frames(&self, mut stream: TcpStream) {
+        let mut buffer = [0; 512];
+        loop {
+            match stream.read(&mut buffer) {
+                Ok(size) => {
+                    if size == 0 {
+                        break;
+                    }
+                    println!("WebSocket frame received: {:?}", &buffer[..size]);
+                    let received_frame: DataFrame = DataFrame::try_from(&buffer[..size]).unwrap();
+                    let received_data : String =  String::from_utf8(received_frame.payload).unwrap();
+                    println!("Received: {}", received_data);
+
+                    if let Some(sending_frame) = DataFrame::from_data(&received_data, OpCode::Text, false) {
+                        stream.write_all(&Vec::from(sending_frame)).unwrap();
+                        stream.flush().unwrap();
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Failed to read WebSocket frame: {}", e);
+                    break;
+                }
+            }
+        }
     }
 }
