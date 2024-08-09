@@ -57,6 +57,27 @@ impl WebSocketUrl {
         }
     }
 
+    pub fn resource_name(&self) -> String {
+        let mut resource_name = String::new();
+        
+        if let Some(path) = &self.path {
+            if !path.starts_with('/') {
+                resource_name.push_str("/");
+            }
+            resource_name.push_str(path);
+        }
+        
+        if let Some(query) = &self.query {
+            if resource_name.ends_with('/'){
+                resource_name.strip_suffix('/').unwrap();
+            }
+            resource_name.push_str("?");
+            resource_name.push_str(query);
+        }
+        
+        resource_name
+    }
+
     pub fn from_url(url: &str) -> Result<Self, ScError>{
         let mut new_wsu = Self::new();
         
