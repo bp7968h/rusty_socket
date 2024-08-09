@@ -4,6 +4,7 @@ use crate::WebSocketUrl;
 use base64::encode;
 use rand::RngCore;
 
+use std::io::Write;
 use std::net::{TcpStream};
 
 pub struct SocketClient {
@@ -29,7 +30,7 @@ impl SocketClient{
         }
     }
 
-    fn perform_handshake(stream: TcpStream, url: WebSocketUrl) -> Result<TcpStream, ScError>{
+    fn perform_handshake(mut stream: TcpStream, url: WebSocketUrl) -> Result<TcpStream, ScError>{
         let resource_name = url.resource_name();
         let host = match url.host.find(':') {
             Some(idx) => {
@@ -41,7 +42,21 @@ impl SocketClient{
         };
 
         let websocket_key = Self::generate_key();
-        todo!()
+
+        let websocket_request = format!(
+            "GET {} HTTP/1.1\r\n
+            Host: {}\r\n
+            Upgrade: websocket\r\n
+            Connection: Upgrade\r\n
+            Sec-WebSocket-Key: {}\r\n
+            Sec-WebSocket-Version: 13\r\n\r\n", 
+            resource_name, host, websocket_key
+        );
+        
+        stream.write_all(websocket_request.as_bytes()).map_err(ScError::from)?;
+        stream.flush().map_err(ScError::from)?;
+
+        Ok(stream)
     }
 
     fn generate_key() -> String {
