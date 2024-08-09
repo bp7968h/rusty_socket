@@ -8,7 +8,7 @@ use std::io::Write;
 use std::net::{TcpStream};
 
 pub struct SocketClient {
-    stream: TcpStream,
+    pub stream: TcpStream,
 }
 
 impl SocketClient{
@@ -44,14 +44,14 @@ impl SocketClient{
         let websocket_key = Self::generate_key();
 
         let websocket_request = format!(
-            "GET {} HTTP/1.1\r\n
-            Host: {}\r\n
-            Upgrade: websocket\r\n
-            Connection: Upgrade\r\n
-            Sec-WebSocket-Key: {}\r\n
-            Sec-WebSocket-Version: 13\r\n\r\n", 
+            "GET {} HTTP/1.1\r\n\
+            Host: {}\r\n\
+            Upgrade: websocket\r\n\
+            Connection: Upgrade\r\n\
+            Sec-WebSocket-Key: {}\r\n\
+            Sec-WebSocket-Version: 13\r\n\r\n",
             resource_name, host, websocket_key
-        );
+        );        
         
         stream.write_all(websocket_request.as_bytes()).map_err(ScError::from)?;
         stream.flush().map_err(ScError::from)?;
