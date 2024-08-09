@@ -1,4 +1,6 @@
 use crate::ScError;
+use std::net::{SocketAddr, ToSocketAddrs};
+use std::io;
 
 #[derive(Debug)]
 pub struct WebSocketUrl {
@@ -9,6 +11,29 @@ pub struct WebSocketUrl {
     pub fragment: Option<String>,
 }
 
+impl ToSocketAddrs for WebSocketUrl {
+    type Iter = std::vec::IntoIter<SocketAddr>;
+
+    fn to_socket_addrs(&self) -> io::Result<Self::Iter> {
+        let port = match self.port() {
+            Ok(port) => port,
+            Err(e) => {
+                return Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid port or scheme"));
+            }
+        };
+
+        let host = if let Some(idx) = self.host.find(':') {
+            &self.host[..idx]
+        } else {
+            &self.host
+        };
+
+        let addr_string = format!("{}:{}", host, port);
+        
+        addr_string.to_socket_addrs()
+    }
+}
+
 impl WebSocketUrl {
     fn new() -> Self {
         WebSocketUrl {
@@ -17,6 +42,18 @@ impl WebSocketUrl {
             path: None,
             query: None,
             fragment: None,
+        }
+    }
+
+    fn port(&self) -> Result<u16, &'static str> {
+        if let Some(idx) = self.host.find(':') {
+            self.host[idx+1..].parse::<u16>().map_err(|_| "Invalid port")
+        } else {
+            match self.scheme.as_str() {
+                "ws" => Ok(80),
+                "wss" => Ok(443),
+                _ => Err("Invalid scheme"),
+            }
         }
     }
 
