@@ -142,7 +142,7 @@ impl DataFrame {
         size
     }
 
-    fn get_payload_length(&self) -> usize {
+    pub fn get_payload_length(&self) -> usize {
         let mut length : usize = 0;
         if let Some(extended_payload_length) = &self.extended_payload_length {
             length = length + extended_payload_length.get_value();
