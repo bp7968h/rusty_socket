@@ -1,6 +1,9 @@
 use crate::ScError;
 use crate::WebSocketUrl;
 
+use base64::encode;
+use rand::RngCore;
+
 use std::net::{TcpStream};
 
 pub struct SocketClient {
@@ -28,7 +31,23 @@ impl SocketClient{
 
     fn perform_handshake(stream: TcpStream, url: WebSocketUrl) -> Result<TcpStream, ScError>{
         let resource_name = url.resource_name();
+        let host = match url.host.find(':') {
+            Some(idx) => {
+                url.host[..idx].to_string()
+            },
+            None => {
+                url.host
+            }
+        };
 
+        let websocket_key = Self::generate_key();
         todo!()
+    }
+
+    fn generate_key() -> String {
+        let mut nonce: [u8; 16] = [0; 16];
+        rand::thread_rng().fill_bytes(&mut nonce);
+
+        encode(&nonce)
     }
 }
