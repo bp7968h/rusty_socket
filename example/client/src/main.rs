@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-use std::fmt;
 use rusty_socket_client::SocketClient;
 use std::io::{self, Read, Write};
 mod commands;
@@ -12,10 +10,10 @@ const COMMANDS: Commands = Commands(&[
     ("help", "Prints usage guide"),
 ]);
 
-
 fn main() {
     println!("---<Command Line Chat Initialized!>---");
     let mut is_connected: bool = false;
+    let mut socket_client : Option<SocketClient> = None;
     let stdin = io::stdin();
 
     screen_init(is_connected);
@@ -40,10 +38,18 @@ fn main() {
                         continue;
                     },
                     "connect" => {
-                        todo!();
-                    },
-                    "disconnect" => {
-                        todo!();
+                        match SocketClient::build("ws://127.0.0.1:8080") {
+                            Ok(client) => {
+                                is_connected = true;
+                                socket_client = Some(client);
+                                println!("Connected successfully.");
+                            },
+                            Err(e) => {
+                                println!("Connection Failed: ({})", e);
+                            }
+                        }
+                        screen_init(is_connected);
+                        continue;
                     },
                     "exit" => break,
                     _ => {
@@ -57,7 +63,7 @@ fn main() {
             true => {
                 match sanitized_input {
                     "disconnect" => {
-                        todo!();
+
                     },
                     _ => {
                         // send message;
@@ -67,6 +73,8 @@ fn main() {
             }
         }
     }
+
+    println!("Exiting Program!");
 }
 
 fn screen_init(is_connected: bool) {
