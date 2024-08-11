@@ -50,6 +50,7 @@ impl RequestLine {
     }
 
     fn validate_headers(headers: &HashMap<String,String>) -> Result<(), &'static str> {
+        // println!("{:?}", headers);
         //validate version
         if let Some(version) = headers.get("sec-websocket-version") {
             match version.parse::<u8>() {

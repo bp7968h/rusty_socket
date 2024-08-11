@@ -23,7 +23,7 @@ impl ResponseLine {
 
     pub fn build(request_key: &str) -> Self {
         let mut response_headers: HashMap<String, String> = HashMap::new();
-        let accpet_key = Self::generate_websocket_accept_key(request_key);
+        let mut accpet_key = Self::generate_websocket_accept_key(request_key);
 
         response_headers.insert("Upgrade".to_string(), "websocket".to_string());
         response_headers.insert("Connection".to_string(), "Upgrade".to_string());
@@ -43,6 +43,7 @@ impl ResponseLine {
         combined_key.push_str(WS_GUID);
         
         let sha1_hash = hasher.hash(&combined_key);
+        // println!("Sha1: {:?}", sha1_hash);
         
         encode(&sha1_hash)
     }

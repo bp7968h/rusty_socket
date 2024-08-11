@@ -14,3 +14,4 @@ members = [
 [workspace.dependencies]
 base64 = { git = "https://github.com/bp7968h/base64" }
 cryptography = { git = "https://github.com/bp7968h/cryptography" }
+rand = "0.8.5"
