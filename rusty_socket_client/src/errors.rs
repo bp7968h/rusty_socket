@@ -5,12 +5,22 @@ use std::io;
 pub enum ScError {
     InvalidUrl,
     IoError(io::Error),
+    ServerClosed,
+    InvalidHttpResponse,
+    InvalidStatusCode,
+    LowerHttpVersion,
+    InvalidHandshakeHeader,
 }
 
 impl PartialEq for ScError {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (ScError::InvalidUrl, ScError::InvalidUrl) => true,
+            ((ScError::InvalidUrl), (ScError::InvalidUrl)) => true,
+            ((ScError::ServerClosed), (ScError::ServerClosed) )=> true,
+            ((ScError::InvalidStatusCode), (ScError::InvalidStatusCode) )=> true,
+            ((ScError::LowerHttpVersion), (ScError::LowerHttpVersion) )=> true,
+            ((ScError::InvalidHttpResponse), (ScError::InvalidHttpResponse) )=> true,
+            ((ScError::InvalidHandshakeHeader), (ScError::InvalidHandshakeHeader) )=> true,
             (ScError::IoError(e1), ScError::IoError(e2)) => e1.kind() == e2.kind(),
             _ => false,
         }
@@ -22,6 +32,11 @@ impl fmt::Display for ScError{
         match self {
             Self::InvalidUrl => write!(f, "Invalid websocket url reveived."),
             Self::IoError(e) => write!(f, "I/O error: {}", e),
+            Self::ServerClosed => write!(f, "Connection closed by server."),
+            Self::LowerHttpVersion => write!(f, "Unspported Http Version, is less than 1.1"),
+            Self::InvalidStatusCode => write!(f, "Status Code is not 101"),
+            Self::InvalidHttpResponse => write!(f, "Invalid http response line"),
+            Self::InvalidHandshakeHeader => write!(f, "Handshake response header invalid.")
         }
     }
 }

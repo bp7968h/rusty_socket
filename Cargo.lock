@@ -110,6 +110,7 @@ name = "rusty_socket_client"
 version = "0.1.0"
 dependencies = [
  "base64",
+ "cryptography",
  "rand",
  "rusty_socket_core",
 ]
