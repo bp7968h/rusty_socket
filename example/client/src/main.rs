@@ -64,18 +64,21 @@ fn main() {
                     }
                 }
             }
-            Some(_) => {
+            Some(ref mut client) => {
                 match sanitized_input {
                     "__disconnect" => {
-                        //TODO close the connection
-
+                        client.close().unwrap();
                         socket_client = None;
                         println!("Disconnected successfully!");
                         screen_init(false);
-                    }
-                    _ => {
-                        // send message;
-                        todo!()
+                    },
+                    message => {
+                        match client.send(message) {
+                            Ok(_) => (),
+                            Err(e) => println!("Error while sending: {}", e),
+                        }
+                        screen_init(true);
+                        continue;
                     }
                 }
             }

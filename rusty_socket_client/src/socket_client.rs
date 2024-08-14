@@ -48,7 +48,7 @@ impl SocketClient{
         }
     }
 
-    fn close(self) -> Result<(), ScError>{
+    pub fn close(&mut self) -> Result<(), ScError>{
         //TODO send close frame
         self.stream.shutdown(Shutdown::Both).map_err(ScError::from)?;
 
