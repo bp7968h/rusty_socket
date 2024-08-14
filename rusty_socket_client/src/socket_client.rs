@@ -48,6 +48,13 @@ impl SocketClient{
         }
     }
 
+    fn close(self) -> Result<(), ScError>{
+        //TODO send close frame
+        self.stream.shutdown(Shutdown::Both).map_err(ScError::from)?;
+
+        Ok(())
+    }
+
     fn perform_handshake(mut stream: TcpStream, url: WebSocketUrl) -> Result<TcpStream, ScError>{
         let resource_name = url.resource_name();
         let host = match url.host.find(':') {
