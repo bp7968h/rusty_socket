@@ -5,18 +5,18 @@ use commands::Commands;
 
 const COMMANDS: Commands = Commands(&[
     ("connect", "Connect to the server"),
-    ("disconnect", "Disconnect from the server"),
+    ("__disconnect", "Disconnect from the server"),
     ("exit", "Exit the program"),
     ("help", "Prints usage guide"),
 ]);
 
 fn main() {
     println!("---<Command Line Chat Initialized!>---");
-    let mut is_connected: bool = false;
-    let mut socket_client : Option<SocketClient> = None;
+    // let mut is_connected: bool = false;
+    let mut socket_client: Option<SocketClient> = None;
     let stdin = io::stdin();
 
-    screen_init(is_connected);
+    screen_init(false);
 
     loop {
         let mut input = String::new();
@@ -25,46 +25,54 @@ fn main() {
         let sanitized_input = input.trim();
 
         if sanitized_input.is_empty() {
-            screen_init(is_connected);
+            match socket_client {
+                Some(_) => screen_init(true),
+                None => screen_init(false),
+            }
             continue;
         }
 
-        match is_connected {
-            false => {
+        match socket_client {
+            None => {
                 match sanitized_input {
                     "help" => {
                         print!("{}", COMMANDS);
-                        screen_init(is_connected);
+                        screen_init(false);
                         continue;
-                    },
+                    }
                     "connect" => {
                         match SocketClient::build("ws://127.0.0.1:8080") {
                             Ok(client) => {
-                                is_connected = true;
+                                // is_connected = true;
                                 socket_client = Some(client);
                                 println!("Connected successfully.");
-                            },
+                                screen_init(true);
+                            }
                             Err(e) => {
-                                println!("Connection Failed: ({})", e);
+                                println!("Connection failed: ({})", e);
+                                screen_init(false);
                             }
                         }
-                        screen_init(is_connected);
                         continue;
-                    },
+                    }
                     "exit" => break,
                     _ => {
                         println!("Command not recognized!");
                         println!("{}", COMMANDS);
-                        screen_init(is_connected);
+                        screen_init(false);
                         continue;
                     }
                 }
-            },
-            true => {
+            }
+            Some(_) => {
                 match sanitized_input {
-                    "disconnect" => {
+                    "__disconnect" => {
+                        //TODO close the connection
 
-                    },
+                        socket_client = None;
+                        println!("Disconnected successfully!");
+                        screen_init(false);
+                    }
                     _ => {
                         // send message;
                         todo!()
@@ -81,7 +89,7 @@ fn screen_init(is_connected: bool) {
     match is_connected {
         false => {
             print!("> ");
-        },
+        }
         true => {
             print!("msg> ");
         }

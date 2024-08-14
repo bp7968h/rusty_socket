@@ -6,8 +6,9 @@ use base64::encode;
 use rand::RngCore;
 
 use std::io::{Write, Read};
-use std::net::{TcpStream};
+use std::net::{Shutdown, TcpStream};
 use std::collections::HashMap;
+use rusty_socket_core::{DataFrame, OpCode};
 
 pub struct SocketClient {
     pub stream: TcpStream,
@@ -32,6 +33,21 @@ impl SocketClient{
         }
     }
 
+    pub fn send(&mut self, message: &str) -> Result<(), ScError> {
+        if message.len() == 0 {
+            return Err(ScError::DataFrameError);
+        }
+        match DataFrame::from_data(message, OpCode::Text, true) {
+            Some(frame) => {
+                self.stream.write_all(&Vec::from(frame)).map_err(ScError::from)?;
+                self.stream.flush().map_err(ScError::from)?;
+
+                Ok(())
+            },
+            None => Err(ScError::DataFrameError),
+        }
+    }
+
     fn perform_handshake(mut stream: TcpStream, url: WebSocketUrl) -> Result<TcpStream, ScError>{
         let resource_name = url.resource_name();
         let host = match url.host.find(':') {
@@ -53,8 +69,8 @@ impl SocketClient{
             Sec-WebSocket-Key: {}\r\n\
             Sec-WebSocket-Version: 13\r\n\r\n",
             resource_name, host, websocket_key
-        );        
-        
+        );
+
         stream.write_all(websocket_request.as_bytes()).map_err(ScError::from)?;
         stream.flush().map_err(ScError::from)?;
 
@@ -90,7 +106,7 @@ impl SocketClient{
                         if line.is_empty(){
                             break;
                         }
-            
+
                         if let Some((key, value)) = line.split_once(": "){
                             let l_key = key.to_ascii_lowercase();
                             resp_headers.insert(l_key, value.to_string());

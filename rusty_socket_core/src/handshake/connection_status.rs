@@ -1,4 +1,4 @@
-pub enum ConnectionStatus{
+pub enum ConnectionStatus {
     Connecting,
     Open,
     Closing,
