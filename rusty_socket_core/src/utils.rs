@@ -3,7 +3,7 @@ use std::fmt;
 #[derive(Debug)]
 pub enum ExtendedPayLoadLength {
     Medium(u16),
-    Large(u64)
+    Large(u64),
 }
 
 impl fmt::Display for ExtendedPayLoadLength {
@@ -22,7 +22,7 @@ impl ExtendedPayLoadLength {
             ExtendedPayLoadLength::Large(_) => 8,
         }
     }
-    
+
     pub fn get_value(&self) -> usize {
         match self {
             ExtendedPayLoadLength::Medium(data) => *data as usize,

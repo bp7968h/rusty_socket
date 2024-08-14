@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::str::Lines;
 
 pub struct RequestLine {
-    pub resource : String,
-    pub headers: HashMap<String, String>
+    pub resource: String,
+    pub headers: HashMap<String, String>,
 }
 
 impl RequestLine {
@@ -27,21 +27,18 @@ impl RequestLine {
         }
 
         for line in full_request {
-            if line.is_empty(){
+            if line.is_empty() {
                 break;
             }
 
-            if let Some((key, value)) = line.split_once(": "){
+            if let Some((key, value)) = line.split_once(": ") {
                 let l_key = key.to_ascii_lowercase();
                 headers.insert(l_key, value.to_string());
             }
         }
 
         match Self::validate_headers(&headers) {
-            Ok(_) => Some(RequestLine {
-                resource,
-                headers,
-            }),
+            Ok(_) => Some(RequestLine { resource, headers }),
             Err(e) => {
                 println!("Error: {}", e);
                 None
@@ -49,7 +46,7 @@ impl RequestLine {
         }
     }
 
-    fn validate_headers(headers: &HashMap<String,String>) -> Result<(), &'static str> {
+    fn validate_headers(headers: &HashMap<String, String>) -> Result<(), &'static str> {
         // println!("{:?}", headers);
         //validate version
         if let Some(version) = headers.get("sec-websocket-version") {
@@ -57,9 +54,9 @@ impl RequestLine {
                 Ok(v) => {
                     if v != 13 {
                         return Err("Invalid WebSocket Version");
-                    } 
-                },
-                Err(_) => return Err("Invalid WebSocket Version")
+                    }
+                }
+                Err(_) => return Err("Invalid WebSocket Version"),
             }
         } else {
             return Err("Missing WebSocket Version");
@@ -84,6 +81,4 @@ impl RequestLine {
 
         Ok(())
     }
-
-
 }

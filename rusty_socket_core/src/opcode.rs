@@ -1,5 +1,5 @@
 #[derive(Debug, PartialEq)]
-pub enum OpCode{
+pub enum OpCode {
     ContinuationFrame,
     Text,
     Binary,
@@ -41,7 +41,7 @@ impl From<OpCode> for u8 {
             OpCode::ConnectionClose => 8,
             OpCode::Ping => 9,
             OpCode::Pong => 10,
-            OpCode::Unknown => 255
+            OpCode::Unknown => 255,
         }
     }
 }

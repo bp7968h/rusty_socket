@@ -1,4 +1,4 @@
-use rusty_socket_client::{WebSocketUrl, ScError};
+use rusty_socket_client::{ScError, WebSocketUrl};
 
 #[test]
 fn test_valid_url_with_all_parts() {
