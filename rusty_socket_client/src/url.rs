@@ -1,4 +1,5 @@
 use crate::ScError;
+use crate::Result;
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::io;
 
@@ -17,7 +18,7 @@ impl ToSocketAddrs for WebSocketUrl {
     fn to_socket_addrs(&self) -> io::Result<Self::Iter> {
         let port = match self.port() {
             Ok(port) => port,
-            Err(e) => {
+            Err(_e) => {
                 return Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid port or scheme"));
             }
         };
@@ -45,7 +46,7 @@ impl WebSocketUrl {
         }
     }
 
-    fn port(&self) -> Result<u16, &'static str> {
+    fn port(&self) -> std::result::Result<u16, &'static str> {
         if let Some(idx) = self.host.find(':') {
             self.host[idx+1..].parse::<u16>().map_err(|_| "Invalid port")
         } else {
@@ -78,7 +79,7 @@ impl WebSocketUrl {
         resource_name
     }
 
-    pub fn from_url(url: &str) -> Result<Self, ScError>{
+    pub fn from_url(url: &str) -> Result<Self>{
         let mut new_wsu = Self::new();
         
         if !url.contains("://"){

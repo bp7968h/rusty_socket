@@ -1,5 +1,5 @@
 use rusty_socket_client::SocketClient;
-use std::io::{self, Read, Write};
+use std::io::{self, Write};
 mod commands;
 use commands::Commands;
 
@@ -43,9 +43,19 @@ fn main() {
                     "connect" => {
                         match SocketClient::build("ws://127.0.0.1:8080") {
                             Ok(client) => {
-                                // is_connected = true;
                                 socket_client = Some(client);
                                 println!("Connected successfully.");
+                                // screen_init(true);
+
+                                if let Some(ref mut connected_client) = socket_client {
+                                    let receive_func = |message: String| {
+                                        println!("rcv=> {}", message);
+                                        print!("msg> ");
+                                        io::stdout().flush().unwrap();
+                                    };
+                                    connected_client.on_receive(receive_func).unwrap();
+
+                                }
                                 screen_init(true);
                             }
                             Err(e) => {
@@ -77,7 +87,7 @@ fn main() {
                             Ok(_) => (),
                             Err(e) => println!("Error while sending: {}", e),
                         }
-                        screen_init(true);
+                        // screen_init(true);
                         continue;
                     }
                 }

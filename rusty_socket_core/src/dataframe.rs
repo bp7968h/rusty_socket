@@ -136,7 +136,7 @@ impl DataFrame {
             size += extended_payload_length.get_size();
         }
 
-        if let Some(masking_key) = self.masking_key {
+        if let Some(_) = self.masking_key {
             size += 4;
         }
 

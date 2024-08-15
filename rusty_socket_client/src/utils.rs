@@ -1,5 +1,5 @@
 use crate::ScError;
-
+use crate::Result;
 use std::collections::HashMap;
 
 use cryptography::SHA1;
@@ -8,7 +8,7 @@ use base64;
 const WS_GUID: &'static str = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
 
-pub fn verify_status_line(status_line: &str) -> Result<(), ScError> {
+pub fn verify_status_line(status_line: &str) -> Result<()> {
     let resp_line: Vec<&str> = status_line.splitn(3, ' ').collect();
     if resp_line.len() != 3 {
         return Err(ScError::InvalidHttpResponse);
@@ -50,10 +50,10 @@ pub fn verify_status_line(status_line: &str) -> Result<(), ScError> {
         return Err(ScError::InvalidHttpResponse);
     }
 
-    return Ok(())
+    Ok(())
 }
 
-pub fn validate_headers(resp_headers: &HashMap<String, String>, client_key: &str) -> Result<(), ScError>{
+pub fn validate_headers(resp_headers: &HashMap<String, String>, client_key: &str) -> Result<()>{
     match resp_headers.get("upgrade") {
         Some(upgrade_value) => {
             if upgrade_value.to_ascii_lowercase() != "websocket" {
