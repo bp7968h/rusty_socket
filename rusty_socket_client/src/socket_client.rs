@@ -1,4 +1,5 @@
 use crate::ScError;
+use crate::Result;
 use crate::WebSocketUrl;
 use crate::utils;
 
@@ -16,7 +17,7 @@ pub struct SocketClient {
 }
 
 impl SocketClient{
-    pub fn build(url: &str) -> Result<Self, ScError> {
+    pub fn build(url: &str) -> Result<Self> {
         let result_url = WebSocketUrl::from_url(url);
 
         match result_url {
@@ -34,7 +35,7 @@ impl SocketClient{
         }
     }
 
-    pub fn send(&mut self, message: &str) -> Result<(), ScError> {
+    pub fn send(&mut self, message: &str) -> Result<()> {
         if message.len() == 0 {
             return Err(ScError::DataFrameError);
         }
@@ -49,7 +50,7 @@ impl SocketClient{
         }
     }
 
-    pub fn on_receive<F>(&mut self, receive_func: F ) -> Result<(), ScError>
+    pub fn on_receive<F>(&mut self, receive_func: F ) -> Result<()>
     where
         F: Fn(String) + Send + 'static
     {
@@ -59,13 +60,16 @@ impl SocketClient{
             loop {
                 match receive_stream.read(&mut buffer) {
                     Ok(size) => {
+                        if size == 0 {
+                            break;
+                        }
                         let received_frame: DataFrame = DataFrame::try_from(&buffer[..size]).unwrap();
                         let received_message: String = String::from_utf8(received_frame.payload).unwrap();
                         receive_func(received_message);
                     },
                     Err(e) => {
                         eprintln!("Failed to receive frame: {}", e);
-                        return Err::<(), ScError>(ScError::DataFrameError);
+                        break;
                     }
                 }
             }
@@ -73,14 +77,14 @@ impl SocketClient{
         Ok(())
     }
 
-    pub fn close(&mut self) -> Result<(), ScError>{
+    pub fn close(&mut self) -> Result<()>{
         //TODO send close frame
         self.stream.shutdown(Shutdown::Both).map_err(ScError::from)?;
 
         Ok(())
     }
 
-    fn perform_handshake(mut stream: TcpStream, url: WebSocketUrl) -> Result<TcpStream, ScError>{
+    fn perform_handshake(mut stream: TcpStream, url: WebSocketUrl) -> Result<TcpStream>{
         let resource_name = url.resource_name();
         let host = match url.host.find(':') {
             Some(idx) => {
@@ -118,7 +122,7 @@ impl SocketClient{
         encode(&nonce)
     }
 
-    fn verify_handshake_response(key: &str, stream: &mut TcpStream) -> Result<(), ScError> {
+    fn verify_handshake_response(key: &str, stream: &mut TcpStream) -> Result<()> {
         let mut buffer = [0u8; 512];
         loop {
             match stream.read(&mut buffer) {
