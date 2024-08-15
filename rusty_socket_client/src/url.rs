@@ -17,7 +17,7 @@ impl ToSocketAddrs for WebSocketUrl {
     fn to_socket_addrs(&self) -> io::Result<Self::Iter> {
         let port = match self.port() {
             Ok(port) => port,
-            Err(e) => {
+            Err(_e) => {
                 return Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid port or scheme"));
             }
         };

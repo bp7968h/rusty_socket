@@ -1,5 +1,5 @@
 use rusty_socket_client::SocketClient;
-use std::io::{self, Read, Write};
+use std::io::{self, Write};
 mod commands;
 use commands::Commands;
 
@@ -45,7 +45,14 @@ fn main() {
                             Ok(client) => {
                                 socket_client = Some(client);
                                 println!("Connected successfully.");
-                                screen_init(true)
+                                screen_init(true);
+
+                                if let Some(ref mut connected_client) = socket_client {
+                                    let receive_func = |message: String| {
+                                        println!("\nReceived: {}", message);
+                                    };
+                                    connected_client.on_receive(receive_func).unwrap();
+                                }
                             }
                             Err(e) => {
                                 println!("Connection failed: ({})", e);
