@@ -43,10 +43,9 @@ fn main() {
                     "connect" => {
                         match SocketClient::build("ws://127.0.0.1:8080") {
                             Ok(client) => {
-                                // is_connected = true;
                                 socket_client = Some(client);
                                 println!("Connected successfully.");
-                                screen_init(true);
+                                screen_init(true)
                             }
                             Err(e) => {
                                 println!("Connection failed: ({})", e);

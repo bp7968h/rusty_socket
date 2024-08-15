@@ -8,6 +8,7 @@ use rand::RngCore;
 use std::io::{Write, Read};
 use std::net::{Shutdown, TcpStream};
 use std::collections::HashMap;
+use std::thread;
 use rusty_socket_core::{DataFrame, OpCode};
 
 pub struct SocketClient {
@@ -46,6 +47,30 @@ impl SocketClient{
             },
             None => Err(ScError::DataFrameError),
         }
+    }
+
+    pub fn on_receive<F>(&mut self, receive_func: F ) -> Result<(), ScError>
+    where
+        F: Fn(String) + Send + 'static
+    {
+        let mut receive_stream = self.stream.try_clone().map_err(ScError::from)?;
+        thread::spawn(move || {
+            let mut buffer = [0; 512];
+            loop {
+                match receive_stream.read(&mut buffer) {
+                    Ok(size) => {
+                        let received_frame: DataFrame = DataFrame::try_from(&buffer[..size]).unwrap();
+                        let received_message: String = String::from_utf8(received_frame.payload).unwrap();
+                        receive_func(received_message);
+                    },
+                    Err(e) => {
+                        eprintln!("Failed to receive frame: {}", e);
+                        return Err::<(), ScError>(ScError::DataFrameError);
+                    }
+                }
+            }
+        });
+        Ok(())
     }
 
     pub fn close(&mut self) -> Result<(), ScError>{
