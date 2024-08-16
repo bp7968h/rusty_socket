@@ -23,11 +23,11 @@ impl ResponseLine {
 
     pub fn build(request_key: &str) -> Self {
         let mut response_headers: HashMap<String, String> = HashMap::new();
-        let accpet_key = Self::generate_websocket_accept_key(request_key);
+        let accept_key = Self::generate_websocket_accept_key(request_key);
 
         response_headers.insert("Upgrade".to_string(), "websocket".to_string());
         response_headers.insert("Connection".to_string(), "Upgrade".to_string());
-        response_headers.insert("Sec-WebSocket-Accept".to_string(), accpet_key);
+        response_headers.insert("Sec-WebSocket-Accept".to_string(), accept_key);
 
         ResponseLine {
             status_code: 101,

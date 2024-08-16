@@ -32,7 +32,7 @@ impl PartialEq for ScError {
 impl fmt::Display for ScError{
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::InvalidUrl => write!(f, "Invalid websocket url reveived."),
+            Self::InvalidUrl => write!(f, "Invalid websocket url received."),
             Self::IoError(e) => write!(f, "I/O error: {}", e),
             Self::ServerClosed => write!(f, "Connection closed by server."),
             Self::LowerHttpVersion => write!(f, "Unsupported http Version, is less than 1.1"),
