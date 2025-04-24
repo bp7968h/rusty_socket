@@ -1,6 +1,8 @@
 # Web Socket Implementation in Rust
 This is a learning attemp to implement web socket from scratch, including all the dependencies, which are implemented as a different library. With this `RFC 6455: The WebSocket Protocol` is implemented, including core protocol, server and client.
 
+[![Rusty Socket Demo](banner.png)](rusty_socket_example.mp4)
+
 ## Overview
 
 WebSockets provide a full-duplex communication channel over a single TCP connection. This implementation handles establishing connections, exchanging messages, and managing different frame types as specified in the WebSocket protocol.
